@@ -219,11 +219,14 @@ impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
                 |lc: LinearCombination<E>, (index, coeff)| lc + (*coeff, Variable::new_unchecked(make_index(*index)))
             );
         for (i, constraint) in self.r1cs.constraints.iter().enumerate() {
-            cs.enforce(|| format!("constraint {}", i),
-                       |_| make_lc(constraint.0.clone()),
-                       |_| make_lc(constraint.1.clone()),
-                       |_| make_lc(constraint.2.clone()),
-            );
+            // 0 * LC = 0 must be ignored
+            if !((constraint.0.is_empty() || constraint.1.is_empty()) && constraint.2.is_empty()) {
+                cs.enforce(|| format!("constraint {}", i),
+                    |_| make_lc(constraint.0.clone()),
+                    |_| make_lc(constraint.1.clone()),
+                    |_| make_lc(constraint.2.clone()),
+                );
+            }
         }
         Ok(())
     }
